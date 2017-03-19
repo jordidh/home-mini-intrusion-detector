@@ -1,11 +1,11 @@
 /*
- * Desc: Home mini intrusion detector
+ * Desc: Home mini intrusion detection
  *       Inputs: 
  *        * D2 input with pullup resistance to read the value of the sensor MC-38 wired door window sensor magnetic switch
  *        * D3 input with pullup resistance to read the value of the sensor MC-38 wired door window sensor magnetic switch
- *        * D5 sonar sensor
+ *        * D5 input echo value for sensor HC-SR04
  *       Outputs:
- *        * D4 sonar sensor
+ *        * D4 output trigger for sensor HC-SR04
  * Author: JDH
  * Date: 13/03/2017
  * Version: 1.0
@@ -22,11 +22,14 @@
 #include <FirebaseError.h>
 #include <FirebaseArduino.h>
 
-const char* ssid = "*********";
-const char* password = "*********";
-
-#define FIREBASE_HOST "*********"
-#define FIREBASE_AUTH "*********"
+/* 
+ *  This file must have the following constants:
+ * #define WIFI_SSID "********"
+ * #define WIFI_PASSWORD "********"
+ * #define FIREBASE_HOST "********"
+ * #define FIREBASE_AUTH "********"
+ */
+#include "config.h"
 
 String deviceName = "Passadis";
 OpenCloseSensor ocSensor1("Finestra", "Finestra Passadis", D2, INPUT_PULLUP, HIGH);
@@ -79,8 +82,8 @@ void setup() {
   digitalWrite(ledPin,LOW);   //LOW = 0, HIGH = 1
 
   // WiFi connection
-  Serial.printf("Connecting to %s ", ssid);
-  WiFi.begin(ssid, password);
+  Serial.printf("Connecting to %s ", WIFI_SSID);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
