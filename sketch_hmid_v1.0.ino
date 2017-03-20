@@ -28,20 +28,51 @@
  * #define WIFI_PASSWORD "********"
  * #define FIREBASE_HOST "********"
  * #define FIREBASE_AUTH "********"
+ * 
+ * const String HOME_NAME = "********";
+ * const String DEVICE_NAME = "********";
+ * #define OC_COUNT ?
+ * OpenCloseSensor ocSensors[OC_COUNT] = {
+ *   OpenCloseSensor(...),
+ *   ...
+ * };
+ * #define P_COUNT ?
+ * PresenceSensor pSensors [P_COUNT] = {
+ *   PresenceSensor(...),
+ *   ...
+ * };
  */
 #include "config.h"
 
-String deviceName = "Passadis";
-OpenCloseSensor ocSensor1("Finestra", "Finestra Passadis", D2, INPUT_PULLUP, HIGH);
-OpenCloseSensor ocSensor2("Porta", "Porta Passadis", D3, INPUT_PULLUP, HIGH);
-PresenceSensor pSensor("Presencia", "Presencia Passadis", D4, D5, 300);
+
 WiFiServer server(80);
 
 int ledPin = BUILTIN_LED; //BUILTIN_LED
 
 
+String toFirebase()
+{
+  return "home/home:" + HOME_NAME + "/device/device:" + DEVICE_NAME + "/";
+}
+
+String toJSON(String sensors)
+{
+  return "{ \"home\":\"" + HOME_NAME + "\", \"device\": { \"device\":\"" + DEVICE_NAME + "\", \"sensors\": [" + sensors + "] } }";
+}
+
+
 String prepareHtmlPage()
 {
+  String htmlSensors = "";
+
+  for (int i=0; i<OC_COUNT; i++) {
+    htmlSensors += "<p>Sensor OC " + String(i) + " = " + ocSensors[i].lastValueReadToString() + "</p>";
+  }
+
+  for (int i=0; i<P_COUNT; i++) {
+    htmlSensors += "<p>Sensor P " + String(i) + " = " + ocSensors[i].lastValueReadToString() + "</p>";
+  }
+  
   String htmlPage = 
      String("HTTP/1.1 200 OK\r\n") +
             "Content-Type: text/html\r\n" +
@@ -50,8 +81,8 @@ String prepareHtmlPage()
             "\r\n" +
             "<!DOCTYPE HTML>" +
             "<html>" +
-            "Sensor 1 " + ocSensor1.lastValueRead() +
-            "Sensor 2 " + ocSensor2.lastValueRead() + 
+            "<H1>" + HOME_NAME + " - " + DEVICE_NAME + "<H1>" +
+            htmlSensors +
             "</html>" +
             "\r\n";
   return htmlPage;
@@ -59,16 +90,27 @@ String prepareHtmlPage()
 
 String prepareJsonPage()
 {
+  String jsonSensors = "";
+
+  for (int i=0; i<OC_COUNT; i++) {
+    jsonSensors += ocSensors[0].toJSON() + ", ";
+  }
+
+  for (int i=0; i<P_COUNT; i++) {
+    jsonSensors += pSensors[0].toJSON() + ", ";
+  }
+
+  if (jsonSensors.length() > 2) {
+    jsonSensors = jsonSensors.substring(0, jsonSensors.length() - 2);
+  }
+  
   String jsonPage = 
      String("HTTP/1.1 200 OK\r\n") +
             "Content-Type: application/json\r\n" +
             "Connection: close\r\n" +  // the connection will be closed after completion of the response
             "Refresh: 10\r\n" +  // refresh the page automatically every 5 sec
             "\r\n" +
-            "{ \"device\": \"" + deviceName + 
-            "\", \"sensors\": [" + ocSensor1.toJSON() + 
-            ", " + ocSensor2.toJSON() + 
-            ", " + pSensor.toJSON() + "]}" +
+            toJSON(jsonSensors) +
             "\r\n";
   return jsonPage;
 }
@@ -108,51 +150,42 @@ void loop() {
   bool isOpen = false;
   bool hasDetected = false;
 
-  isOpen = ocSensor1.isOpen(&hasChanged);
-  if (hasChanged) {
-    firebaseValue = ocSensor1.lastValueReadToString();
-
-    //Write results to firebase
-    firebaseMessage = "device/device:" + deviceName + "/" + ocSensor1.toFirebaseDB(0);
-    Firebase.setString(firebaseMessage, firebaseValue);
-    // handle error
-    if (Firebase.failed()) {
-      Serial.print("setting ocSensor1 failed:");
-      Serial.println(Firebase.error());  
+  for (int i=0; i<OC_COUNT; i++) {
+    isOpen = ocSensors[i].isOpen(&hasChanged);
+    if (hasChanged) {
+      firebaseValue = ocSensors[i].lastValueReadToString();
+  
+      //Write results to firebase
+      firebaseMessage = toFirebase() + ocSensors[i].toFirebaseDB(0);
+      Firebase.setString(firebaseMessage, firebaseValue);
+      // handle error
+      if (Firebase.failed()) {
+        Serial.print("setting ocSensor1 failed:");
+        Serial.println(Firebase.error());  
+      }
     }
   }
 
-  isOpen = ocSensor2.isOpen(&hasChanged);
-  if (hasChanged) {
-    firebaseValue = ocSensor2.lastValueReadToString();
-    //Write results to firebase
-    firebaseMessage = "device/device:" + deviceName + "/" + ocSensor2.toFirebaseDB(0);
-    Firebase.setString(firebaseMessage, firebaseValue);
-    // handle error
-    if (Firebase.failed()) {
-      Serial.print("setting ocSensor1 failed:");
-      Serial.println(Firebase.error());  
-    }
-  }
-
-  hasDetected = pSensor.presenceDetected(&distanceDetected, &hasChanged);
-  if (hasChanged) {
-    firebaseValue = pSensor.lastValueReadToString();
-    //Write results to firebase
-    firebaseMessage = "device/device:" + deviceName + "/" + pSensor.toFirebaseDB(0);
-    Firebase.setString(firebaseMessage, firebaseValue);
-    // handle error
-    if (Firebase.failed()) {
-        Serial.print("setting presenceDetected failed:");
-        Serial.println(Firebase.error());  
-    }
-
-    firebaseMessage = "device/device:" + deviceName + "/" + pSensor.toFirebaseDBDistance(0);
-    Firebase.setFloat(firebaseMessage, pSensor.lastDistanceRead());
-    // handle error
-    if (Firebase.failed()) {
-        Serial.print("setting presenceDetected failed:");
-        Serial.println(Firebase.error());  
+  for (int i=0; i<P_COUNT; i++) {
+    hasDetected = pSensors[i].presenceDetected(&distanceDetected, &hasChanged);
+    if (hasChanged) {
+      firebaseValue = pSensors[i].lastValueReadToString();
+      //Write results to firebase
+      firebaseMessage = toFirebase() + pSensors[i].toFirebaseDB(0);
+      Firebase.setString(firebaseMessage, firebaseValue);
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("setting presenceDetected failed:");
+          Serial.println(Firebase.error());  
+      }
+  
+      firebaseMessage = toFirebase() + pSensors[i].toFirebaseDBDistance(0);
+      Firebase.setFloat(firebaseMessage, pSensors[i].lastDistanceRead());
+      // handle error
+      if (Firebase.failed()) {
+          Serial.print("setting presenceDetected failed:");
+          Serial.println(Firebase.error());  
+      }
     }
   }
 
