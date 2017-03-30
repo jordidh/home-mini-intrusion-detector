@@ -11,15 +11,23 @@
 
 class PresenceSensor {
   public:
-    PresenceSensor(String name, String desc, int pinTrigger, int pinEcho, long presenceThreshold);
+    PresenceSensor(String userId, String homeId, String deviceId, String id, String name, String desc, int pinTrigger, int pinEcho, long presenceThreshold);
     bool presenceDetected(long* distance, bool* presenceValueHasChanged);
     String toJSON();
     String toJSON(long lastDistance);
-    String toFirebaseDB(long lastDistance);
-    String toFirebaseDBDistance(long lastDistance);
+    String toFirebaseDB();
     long lastDistanceRead();
     String lastValueReadToString();
+    String getId();
+    String getName();
+    String getDescription();
+    String getState();
   private:
+    String _userId;
+    String _homeId;
+    String _deviceId;
+
+    String _id;
     String _name;
     String _description;
     int _pinTrigger;

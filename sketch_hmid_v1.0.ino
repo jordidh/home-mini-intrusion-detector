@@ -52,7 +52,7 @@ int ledPin = BUILTIN_LED; //BUILTIN_LED
 
 String toFirebase()
 {
-  return "home/home:" + HOME_NAME + "/device/device:" + DEVICE_NAME + "/";
+  return "secured-homes/" + USER_GUID + "/" + HOME_GUID;
 }
 
 String toJSON(String sensors)
@@ -117,6 +117,8 @@ String prepareJsonPage()
 
 
 void setup() {
+  String firebaseMessage = "";
+  
   Serial.begin(115200);
   
   // Setup IO
@@ -140,6 +142,43 @@ void setup() {
   //Firebase
   Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
   Serial.printf("Firebase started");
+
+  //Creaate home and devices data
+  //Write results to firebase  
+  firebaseMessage = toFirebase() + "/name:";
+  Firebase.setString(firebaseMessage, HOME_NAME);
+  firebaseMessage = toFirebase() + "/description:";
+  Firebase.setString(firebaseMessage, "-");
+  firebaseMessage = toFirebase() + "/address:";
+  Firebase.setString(firebaseMessage, "-");
+  firebaseMessage = toFirebase() + "/location:";
+  Firebase.setString(firebaseMessage, "-");
+  firebaseMessage = toFirebase() + "/devices/" + DEVICE_GUID + "/name:";
+  Firebase.setString(firebaseMessage, DEVICE_NAME);
+  firebaseMessage = toFirebase() + "/devices/" + DEVICE_GUID + "/description:";
+  Firebase.setString(firebaseMessage, "-");
+  //firebaseMessage = toFirebase() + "/devices/" + DEVICE_GUID + "/sensors/" + SENSOR_GUID + "/name:";
+
+  for (int i=0; i<OC_COUNT; i++) {
+    //Write results to firebase
+    firebaseMessage = ocSensors[i].toFirebaseDB() + "/name:";
+    Firebase.setString(firebaseMessage, ocSensors[i].getName());
+    firebaseMessage = ocSensors[i].toFirebaseDB() + "/state:";
+    Firebase.setString(firebaseMessage, ocSensors[i].getState());
+    firebaseMessage = ocSensors[i].toFirebaseDB() + "/values:";
+    Firebase.setString(firebaseMessage, "-");
+  }
+
+  for (int i=0; i<P_COUNT; i++) {
+    //Write results to firebase
+    firebaseMessage = pSensors[i].toFirebaseDB() + "/name:";
+    Firebase.setString(firebaseMessage, pSensors[i].getName());
+    firebaseMessage = pSensors[i].toFirebaseDB() + "/state:";
+    Firebase.setString(firebaseMessage, pSensors[i].getState());
+    firebaseMessage = pSensors[i].toFirebaseDB() + "/values:";
+    Firebase.setString(firebaseMessage, "-");
+  }
+  
 }
 
 void loop() {
@@ -156,7 +195,7 @@ void loop() {
       firebaseValue = ocSensors[i].lastValueReadToString();
   
       //Write results to firebase
-      firebaseMessage = toFirebase() + ocSensors[i].toFirebaseDB(0);
+      firebaseMessage = ocSensors[i].toFirebaseDB() + "/state:";
       Firebase.setString(firebaseMessage, firebaseValue);
       // handle error
       if (Firebase.failed()) {
@@ -171,7 +210,7 @@ void loop() {
     if (hasChanged) {
       firebaseValue = pSensors[i].lastValueReadToString();
       //Write results to firebase
-      firebaseMessage = toFirebase() + pSensors[i].toFirebaseDB(0);
+      firebaseMessage = pSensors[i].toFirebaseDB() + "/state:";
       Firebase.setString(firebaseMessage, firebaseValue);
       // handle error
       if (Firebase.failed()) {
@@ -179,7 +218,7 @@ void loop() {
           Serial.println(Firebase.error());  
       }
   
-      firebaseMessage = toFirebase() + pSensors[i].toFirebaseDBDistance(0);
+      firebaseMessage = pSensors[i].toFirebaseDB() + "/values:";
       Firebase.setFloat(firebaseMessage, pSensors[i].lastDistanceRead());
       // handle error
       if (Firebase.failed()) {

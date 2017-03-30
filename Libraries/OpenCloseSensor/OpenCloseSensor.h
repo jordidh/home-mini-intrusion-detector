@@ -11,14 +11,23 @@
 
 class OpenCloseSensor {
   public:
-    OpenCloseSensor(String name, String desc, int pin, int mode, int openValue);
+    OpenCloseSensor(String userId, String homeId, String deviceId, String id, String name, String desc, int pin, int mode, int openValue);
     bool isOpen(bool* openValueHasChanged);
     String toJSON();
     String toJSON(int lastValue);
-    String toFirebaseDB(int lastValue);
+    String toFirebaseDB();
     int lastValueRead();
     String lastValueReadToString();
+    String getId();
+    String getName();
+    String getDescription();
+    String getState();
   private:
+    String _userId;
+    String _homeId;
+    String _deviceId;
+
+    String _id;
     String _name;
     String _description;
     int _pin;

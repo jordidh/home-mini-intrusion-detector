@@ -8,7 +8,12 @@
 #include "Arduino.h"
 #include "PresenceSensor.h"
 
-PresenceSensor::PresenceSensor(String name, String desc, int pinTrigger, int pinEcho, long presenceThreshold) {
+PresenceSensor::PresenceSensor(String userId, String homeId, String deviceId, String id, String name, String desc, int pinTrigger, int pinEcho, long presenceThreshold) {
+  _userId = userId;
+  _homeId = homeId;
+  _deviceId = deviceId;
+
+  _id = id;
   _name = name;
   _description = desc;
   _pinTrigger = pinTrigger;
@@ -84,12 +89,8 @@ String PresenceSensor::toJSON(long lastDistance) {
   }
 }
 
-String PresenceSensor::toFirebaseDB(long lastDistance) {
-  return "sensor/sensor:" + _name + "/value";
-}
-
-String PresenceSensor::toFirebaseDBDistance(long lastDistance) {
-  return "sensor/sensor:" + _name + "/distance";
+String PresenceSensor::toFirebaseDB() {
+  return "secured-homes/" + _userId + "/" + _homeId + "/devices/" + _deviceId + "/sensors/" + _id;
 }
 
 long PresenceSensor::lastDistanceRead() {
@@ -97,6 +98,26 @@ long PresenceSensor::lastDistanceRead() {
 }
 
 String PresenceSensor::lastValueReadToString() {
+  if (_lastDistanceRead  <= _presenceThreshold) {
+    return "DETECTED";
+  } else {
+    return "NOT_DETECTED";
+  }
+}
+
+String PresenceSensor::getId() {
+  return _id;
+}
+
+String PresenceSensor::getName() {
+  return _name;
+}
+
+String PresenceSensor::getDescription() {
+  return _description;
+}
+
+String PresenceSensor::getState() {
   if (_lastDistanceRead  <= _presenceThreshold) {
     return "DETECTED";
   } else {

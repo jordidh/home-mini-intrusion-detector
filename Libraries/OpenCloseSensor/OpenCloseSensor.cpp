@@ -8,7 +8,12 @@
 #include "Arduino.h"
 #include "OpenCloseSensor.h"
 
-OpenCloseSensor::OpenCloseSensor(String name, String desc, int pin, int mode, int openValue) {
+OpenCloseSensor::OpenCloseSensor(String userId, String homeId, String deviceId, String id, String name, String desc, int pin, int mode, int openValue) {
+  _userId = userId;
+  _homeId = homeId;
+  _deviceId = deviceId;
+
+  _id = id;
   _name = name;
   _description = desc;
   _pin = pin;
@@ -47,13 +52,15 @@ String OpenCloseSensor::toJSON(int lastValue) {
   }
 }
 
-String OpenCloseSensor::toFirebaseDB(int lastValue) {
+String OpenCloseSensor::toFirebaseDB() {
   //if (lastValue == _openValue) {
   //  return "sensor/sensor:" + _name + "/value:OPEN";
   //} else {
   //  return "sensor/sensor:" + _name + "/value:CLOSE";
   //}
-  return "sensor/sensor:" + _name + "/value";
+  //return "sensors/" + _id + "/name";
+  //return "sensors/" + _id + "/values";
+  return "secured-homes/" + _userId + "/" + _homeId + "/devices/" + _deviceId + "/sensors/" + _id;
 }
 
 int OpenCloseSensor::lastValueRead() {
@@ -61,6 +68,26 @@ int OpenCloseSensor::lastValueRead() {
 }
 
 String OpenCloseSensor::lastValueReadToString() {
+  if (_lastValueRead == _openValue) {
+    return "OPEN";
+  } else {
+    return "CLOSE";
+  }
+}
+
+String OpenCloseSensor::getId() {
+  return _id;
+}
+
+String OpenCloseSensor::getName() {
+  return _name;
+}
+
+String OpenCloseSensor::getDescription() {
+  return _description;
+}
+
+String OpenCloseSensor::getState() {
   if (_lastValueRead == _openValue) {
     return "OPEN";
   } else {
